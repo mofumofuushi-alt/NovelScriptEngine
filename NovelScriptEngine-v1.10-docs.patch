@@ -1,0 +1,151 @@
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,42 @@
+-# NovelScript Engine v1.8 Desktop（Windowsネイティブ版）
++# NovelScript Engine v1.10 Desktop（Windowsネイティブ版）
+ 
+ ブラウザやWebViewを使わず、Windows標準のデスクトップウィンドウとして動作するGUIシナリオエディタ／テストプレイヤーです。
++
++## v1.10：演出強化
++
++シナリオから次の演出を呼び出せます。演出中は自動的に進行を待ち、完了すると次の命令へ進みます。
++
++| 命令 | 形式 | 内容 |
++|---|---|---|
++| `fadeout` | `fadeout 500 #000000` | 指定色へ画面をフェードアウト |
++| `fadein` | `fadein 500 #000000` | 指定色から画面をフェードイン |
++| `bgfade` | `bgfade "assets/bg_riverside.svg" 700` | 背景を暗転経由で切り替え |
++| `flash` | `flash #ffffff 180` | 指定色のフラッシュ |
++| `shake` | `shake 350 8` | 画面揺れ（時間ms・強さ1〜40） |
++
++フェード・フラッシュの時間は0〜10000msです。色は `#RRGGBB` 形式で指定します。`fadeout` の後に背景などを変更し、`fadein` で戻す演出も可能です。
++
++```nse
++; 登場シーンを黒から表示
++fadein 700 #000000
++
++; 背景を暗転しながら切り替える
++bgfade "assets/bg_riverside.svg" 650
++
++; 衝撃や強い音の演出
++flash #ffffff 120
++shake 300 9
++
++; 場面を閉じる
++fadeout 500 #000000
++```
++
++## v1.9：ゲーム画面サイズ
++
++- テストプレイの標準ゲーム画面は1280×720ピクセルです。
++- 「画面・文字表示設定」からウィンドウ／フルスクリーンを選択できます。
++- F11またはAlt+Enterで切替、フルスクリーン中はEscでウィンドウに戻ります。
++- ゲーム画面モードは文字表示の「全画面テキスト」とは別に保存されます。
+ 
+ ## 利用者のPCにPythonは不要
+ 
+@@ -74,7 +110,7 @@
+ - `.nse` / `.txt` の新規作成・編集・読み込み・保存
+ - 既存GUIエディタの `.nproj` 読み込み（シーン／ブロック順を保って `.nse` に変換）
+ - ラベル一覧とラベル位置へのジャンプ、命令テンプレート、構文チェック
+-- ネイティブウィンドウでのゲームテストプレイ
++- ネイティブウィンドウでのゲームテストプレイ（1280×720／フルスクリーン切替）
+ - 背景・立ち絵（left / center / right の固定位置）・複数レイヤー・口パク・画面内選択肢・分岐・変数・エンディング
+ - 選択肢はゲーム画面内にカード状で表示し、マウスクリックまたは数字キー（1〜9）で選択
+ - ゲーム画面内のクリックで文字送り。タイプライター表示中は1回目で全文表示、2回目で次へ進行
+@@ -83,7 +119,8 @@
+ - 10スロットのセーブ／ロード、保存時画面のサムネイル、選択肢を含むゲーム状態の復元
+ - バックログで台詞と選択履歴を閲覧
+ - WAV形式のBGM／効果音／台詞音声（Windowsの標準機能を使用、台詞音声は口パクと同期）
+-- 画面文字設定：フォント、サイズ、色、太さ、揃え、会話ウィンドウ／全画面／字幕、位置、余白、透過、タイプライター速度
++- 演出命令：フェードイン／アウト、背景クロスフェード、フラッシュ、画面揺れ
++- 画面・文字設定：1280×720／フルスクリーン、フォント、サイズ、色、太さ、揃え、会話ウィンドウ／全画面テキスト／字幕、位置、余白、透過、タイプライター速度
+ - Ctrl+S 保存、Ctrl+Enter テストプレイ、Ctrl+Z/Y 編集履歴
+ 
+ ## ユーザーデータの保存先
+@@ -97,7 +134,8 @@
+ ## 同梱サンプル
+ 
+ - `examples/testplay_5min.nproj`：5分テストプロジェクト
+-- `examples/sample_5min.nse`：5分テストシナリオ
++- `examples/sample_5min.nse`：5分テストシナリオ（フェード・フラッシュ・画面揺れ入り）
++- `examples/visual_effects.nse`：演出命令の動作確認用サンプル
+ - `assets/`：SVG／WAV素材
+ - `assets_png/`：GUI表示用PNG素材
+ 
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,4 +1,21 @@
+ # Changelog
++
++## v1.10 Desktop — 演出強化
++
++- `fadein` / `fadeout` で指定色の滑らかな画面フェードを追加。黒以外の色も指定可能。
++- `bgfade` で背景切替を暗転経由のクロスフェードに対応。
++- `flash` で白・赤などのフラッシュ演出を追加。
++- `shake` で画面全体を短時間揺らす演出を追加。時間・強さを指定可能。
++- 各演出は完了までシナリオ進行を止め、文字送りクリックで飛ばないように制御。
++- `.nproj` と `.nse` の相互変換、構文チェック、エディタ命令テンプレートに演出命令を追加。
++- サンプルシナリオにフェード、背景切替、フラッシュ、画面揺れを追加。
++
++## v1.9 Desktop — ゲーム画面サイズ変更
++
++- 標準ゲーム画面を1280×720ピクセルに変更。
++- ウィンドウ／フルスクリーン切替とF11／Alt+Enter／Esc操作を追加。
++- 既存の文字表示レイアウトと独立して画面モードを保存。
++
+ 
+ ## v1.8 Desktop — 立ち絵自由配置・ドラッグ移動の削除
+ 
+--- a/BUILD_NOTES.md
++++ b/BUILD_NOTES.md
+@@ -1,4 +1,4 @@
+-# v1.8 Build Notes
++# v1.10 Build Notes
+ 
+ - Native Tkinter Windows desktop application; no browser, WebView or network runtime.
+ - Single-file PyInstaller build bundles Python and Tcl/Tk; end-user Python installation is not required.
+@@ -14,3 +14,7 @@
+ - v1.7 adds independent transparent character layers, drag movement, Z-order and visibility management. Mouth layers switch between closed/open PNGs while dialogue is active; optional WAV voice tracks drive mouth animation for the WAV duration.
+ - v1.8 removes in-game dragging for both character sprites and overlay layers. Legacy `chara` X/Y values and v1.6 save coordinates are migrated to the nearest fixed `left` / `center` / `right` anchor; layer composition coordinates remain script-defined for mouth/eye alignment.
+ - Voice and layer state are persisted in the existing version-1 save container without changing the outer save schema; old saves default to an empty layer set.
++
++- v1.9 sets the native player window to a 1280×720 logical stage and persists the windowed/fullscreen preference separately from dialogue text layout. F11 / Alt+Enter toggle; Escape exits fullscreen.
++- v1.10 adds blocking visual script effects: alpha fade-in/out, darkened background crossfade, color flash and whole-stage shake. Effects use Tk after scheduling and Pillow RGBA overlays; no external runtime services are needed.
++- New visual-effect commands are included in the `.nse` validator, interpreter and `.nproj` round-trip converter. Existing commands and v1.x saves retain their previous schemas.
+--- a/TEST_REPORT.md
++++ b/TEST_REPORT.md
+@@ -1,9 +1,9 @@
+-# NovelScript Engine v1.8 Desktop — Test Report
++# NovelScript Engine v1.10 Desktop — Test Report
+ 
+ ## Automated tests
+ 
+ - Python syntax compilation: PASS
+-- Unit tests: 21 / 21 PASS
++- Unit tests: 23 / 23 PASS
+   - `.nproj` import and `.nse` round-trip (12 labels, ordered branches and expressions)
+   - 5-minute sample validation and four route combinations
+   - choice event order and targets retained
+@@ -14,8 +14,10 @@
+   - save-slot PNG path validation
+   - multi-layer commands, ordering, visibility, position, removal and save/restore
+   - mouth-open/closed layer settings, voice WAV command sequencing and .nproj round-trip
++  - fade/flash/shake/background transition event sequencing, parameter validation and .nproj round-trip
+ - Tkinter GUI smoke test under Xvfb: PASS
+   - Native editor and player creation; asset and choice display
++  - Blocking fade-in/out, background crossfade, flash and shake animations; effect completion resumes the scenario
+   - Existing screen-click and typewriter behavior
+   - Right-click menu has Save/Load and Backlog commands
+   - Save slot restores pending choices, interpreter PC and backlog
+@@ -43,3 +45,10 @@
+ - `python tests/gui_smoke.py` on a virtual display: passed.
+ - Confirmed fixed `left` / `center` / `right` character anchors, removal of character coordinate state, v1.6 saved-coordinate migration, `.nproj` conversion to fixed anchors, click-through behavior on character art, and no drag movement of overlay layers.
+ - Confirmed v1.7 layer manager, visibility toggle, lip/voice layer state and save restoration remain operational.
++
++## v1.10 regression results
++
++- `python -m py_compile app.py tests/test_desktop.py tests/gui_smoke.py`: passed.
++- `python -m unittest discover -s tests -p "test_*.py" -v`: 23 tests passed.
++- `xvfb-run -a python tests/gui_smoke.py`: passed, including animated fade, background crossfade, flash, shake and non-skippable effect flow.
++- Windows Actions build will run the same checks and package the standalone EXE.
