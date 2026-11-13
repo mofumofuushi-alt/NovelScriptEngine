@@ -141,7 +141,7 @@
 
 --- /dev/null
 +++ b/examples/visual_effects_showcase.nse
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,43 @@
 +; NovelScript Engine v1.10
 +; Visual effects showcase - all five effect commands in one playable scenario.
 +; Open this file in the editor and start Test Play.
