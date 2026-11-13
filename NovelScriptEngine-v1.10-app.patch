@@ -42,7 +42,7 @@
      references: list[tuple[int, str, str]] = []
 -    known = {"label", "text", "msg", "name", "bg", "chara", "layer", "lip", "voice", "layerhide", "layershow", "layerpos", "layerorder", "layerremove", "bgm", "se", "wait", "jump", "select", "set", "inc", "if", "endif", "endflag", "clear", "end"}
 +    known = {"label", "text", "msg", "name", "bg", "chara", "layer", "lip", "voice", "layerhide", "layershow", "layerpos", "layerorder", "layerremove", "bgm", "se", "wait", "fadeout", "fadein", "flash", "shake", "bgfade", "jump", "select", "set", "inc", "if", "endif", "endflag", "clear", "end"}
-     for no, original in enumerate(source.replace("﻿", "").splitlines(), 1):
+     for no, original in enumerate(source.replace("\ufeff", "").splitlines(), 1):
          line = original.strip()
          if not line or line.startswith(";") or line.startswith("//"):
 @@ -209,7 +215,7 @@
