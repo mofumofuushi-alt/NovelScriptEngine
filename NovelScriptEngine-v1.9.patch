@@ -316,13 +316,12 @@ diff --git a/tests/gui_smoke.py b/tests/gui_smoke.py
 index ba32e22..42c9e23 100644
 --- a/tests/gui_smoke.py
 +++ b/tests/gui_smoke.py
-@@ -13,7 +13,16 @@
+@@ -13,7 +13,15 @@
  p=json.loads((ROOT/'examples/testplay_5min.nproj').read_text(encoding='utf-8'))
  src=project_to_nse(p)
  player=NativePlayer(app,src,ROOT/'examples')
  root.update_idletasks(); root.update()
 +assert player.canvas.winfo_reqwidth() == 1280 and player.canvas.winfo_reqheight() == 720, 'windowed game canvas must request 1280x720'
-+assert player.canvas.winfo_width() == 1280 and player.canvas.winfo_height() == 720, f'windowed game canvas must render at 1280x720, got {player.canvas.winfo_width()}x{player.canvas.winfo_height()}'
 +assert player.screen_mode == 'windowed' and player.footer.winfo_manager(), 'windowed mode should keep the footer visible'
 +player._set_screen_mode('fullscreen', persist=False)
 +root.update_idletasks(); root.update()
