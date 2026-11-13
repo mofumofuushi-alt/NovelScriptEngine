@@ -59,7 +59,7 @@ jobs:
           $dist = Join-Path $env:GITHUB_WORKSPACE "dist"
           $work = Join-Path $env:RUNNER_TEMP "nse-pyinstaller-work"
           $spec = Join-Path $env:RUNNER_TEMP "nse-pyinstaller-spec"
-          $args = @(
+          $pyArgs = @(
             "-m", "PyInstaller", "--noconfirm", "--clean", "--windowed", "--onefile",
             "--name", "NovelScriptEngine",
             "--distpath", $dist, "--workpath", $work, "--specpath", $spec,
@@ -68,7 +68,7 @@ jobs:
             "--add-data", "$env:SOURCE_DIR/examples;examples",
             "$env:SOURCE_DIR/app.py"
           )
-          python @args
+          python @pyArgs
           if (!(Test-Path (Join-Path $dist "NovelScriptEngine.exe"))) {
             throw "EXEが生成されませんでした。"
           }
