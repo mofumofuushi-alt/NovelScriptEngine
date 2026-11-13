@@ -110,7 +110,7 @@ jobs:
           new = "v1.10 Desktop  |  Windowsネイティブ版・オフライン"
           if source.count(old) != 1:
               raise SystemExit("Expected v1.9 application label exactly once")
-          path.write_text(source.replace(old, new), encoding="utf-8", newline="\\n")
+          path.write_bytes(source.replace(old, new).encode("utf-8"))
           '@
           Push-Location $env:SOURCE_DIR
           try {
