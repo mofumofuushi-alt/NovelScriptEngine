@@ -92,7 +92,7 @@ jobs:
             foreach ($name in $patches) {
               $patch = Join-Path $env:GITHUB_WORKSPACE $name
               if (!(Test-Path $patch)) { throw "Patch file not found: $name" }
-              git apply --ignore-whitespace --ignore-space-change --recount $patch
+              git apply --ignore-whitespace --ignore-space-change $patch
               if ($LASTEXITCODE -ne 0) { throw "Failed to apply $name" }
             }
           } finally {
