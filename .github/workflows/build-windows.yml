@@ -99,6 +99,26 @@ jobs:
             Pop-Location
           }
 
+      - name: Update v1.10 application label
+        shell: pwsh
+        run: |
+          $update = @'
+          from pathlib import Path
+          path = Path("app.py")
+          source = path.read_text(encoding="utf-8")
+          old = "v1.9 Desktop  |  Windowsネイティブ版・オフライン"
+          new = "v1.10 Desktop  |  Windowsネイティブ版・オフライン"
+          if source.count(old) != 1:
+              raise SystemExit("Expected v1.9 application label exactly once")
+          path.write_text(source.replace(old, new), encoding="utf-8", newline="\\n")
+          '@
+          Push-Location $env:SOURCE_DIR
+          try {
+            $update | python -
+          } finally {
+            Pop-Location
+          }
+
       - name: Install build dependency
         shell: pwsh
         run: |
