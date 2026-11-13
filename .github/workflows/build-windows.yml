@@ -6,6 +6,7 @@ on:
     paths:
       - "NovelScriptEngine-Source-Optimized.zip"
       - "NovelScriptEngine-v1.9.patch"
+      - ".github/workflows/build-windows.yml"
 
 permissions:
   contents: read
@@ -46,7 +47,7 @@ jobs:
           }
           Push-Location $env:SOURCE_DIR
           try {
-            git apply $patch
+            git apply --recount $patch
           } finally {
             Pop-Location
           }
