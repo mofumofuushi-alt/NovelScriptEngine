@@ -1,0 +1,340 @@
+diff --git a/BUILD_NOTES.md b/BUILD_NOTES.md
+index 8c0f831..2bdd01d 100644
+--- a/BUILD_NOTES.md
++++ b/BUILD_NOTES.md
+@@ -1,4 +1,4 @@
+-# v1.8 Build Notes
++# v1.9 Build Notes
+ 
+ - Native Tkinter Windows desktop application; no browser, WebView or network runtime.
+ - Single-file PyInstaller build bundles Python and Tcl/Tk; end-user Python installation is not required.
+@@ -14,3 +14,5 @@
+ - v1.7 adds independent transparent character layers, drag movement, Z-order and visibility management. Mouth layers switch between closed/open PNGs while dialogue is active; optional WAV voice tracks drive mouth animation for the WAV duration.
+ - v1.8 removes in-game dragging for both character sprites and overlay layers. Legacy `chara` X/Y values and v1.6 save coordinates are migrated to the nearest fixed `left` / `center` / `right` anchor; layer composition coordinates remain script-defined for mouth/eye alignment.
+ - Voice and layer state are persisted in the existing version-1 save container without changing the outer save schema; old saves default to an empty layer set.
++
++- v1.9 sets the native player canvas to 1280×720 in windowed mode and adds a persistent `screen_mode` preference (`windowed` / `fullscreen`). F11 and Alt+Enter toggle the mode; Escape exits fullscreen. This preference is independent of the existing dialogue `layout` setting.
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index ea49025..5e5f3e9 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,5 +1,13 @@
+ # Changelog
+ 
++## v1.9 Desktop — 1280×720／フルスクリーン切替
++
++- テストプレイの標準ゲーム画面を1280×720ピクセル（16:9）に変更。
++- 画面設定に「ウィンドウ（1280×720）／フルスクリーン」切替を追加し、ユーザー設定に保存。
++- F11／Alt+Enterで切替、Escでフルスクリーンから復帰。
++- 文字表示レイアウトの「全画面テキスト」とゲームウィンドウの全画面モードを別設定として管理。
++- 既存の`.nse`命令・セーブ形式・固定位置の立ち絵・口パク・レイヤー管理は変更なし。
++
+ ## v1.8 Desktop — 立ち絵自由配置・ドラッグ移動の削除
+ 
+ - ゲーム画面上でキャラクター立ち絵・レイヤーをドラッグ移動する機能を削除。
+diff --git a/README.md b/README.md
+index 7b1b588..04a5fe7 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,4 @@
+-# NovelScript Engine v1.8 Desktop（Windowsネイティブ版）
++# NovelScript Engine v1.9 Desktop（Windowsネイティブ版）
+ 
+ ブラウザやWebViewを使わず、Windows標準のデスクトップウィンドウとして動作するGUIシナリオエディタ／テストプレイヤーです。
+ 
+@@ -6,6 +6,14 @@
+ 
+ 完成した `NovelScriptEngine.exe` はPythonランタイムとTk/Tclをアプリに同梱する単体実行ファイルです。利用者はPythonをインストールする必要はありません。通常利用時のインターネット接続も不要です。
+ 
++## v1.9：ゲーム画面1280×720／フルスクリーン切替
++
++- テストプレイのゲーム表示領域を標準1280×720ピクセル（16:9）に変更しました。
++- 「画面・文字表示設定」の「ゲーム画面サイズ」から、ウィンドウ（1280×720）とフルスクリーンを選択できます。
++- F11またはAlt+Enterで表示モードを切り替え、フルスクリーン中はEscでウィンドウ表示に戻せます。
++- 選択した表示モードはユーザー設定に保存され、次回のテストプレイにも引き継がれます。
++- 文字表示レイアウトの「全画面テキスト」とは独立した設定です。`.nse` 命令形式、セーブデータ、口パク、立ち絵レイヤー、固定位置表示は変更していません。
++
+ ## v1.7：口パク・立ち絵レイヤー管理
+ 
+ - `layer` 命令で立ち絵をID付きレイヤーとして追加できます。X/Yは画面の割合、Zは重なり順です。
+@@ -74,7 +82,7 @@ GitHub Actions側でPythonとPyInstallerを自動セットアップします。
+ - `.nse` / `.txt` の新規作成・編集・読み込み・保存
+ - 既存GUIエディタの `.nproj` 読み込み（シーン／ブロック順を保って `.nse` に変換）
+ - ラベル一覧とラベル位置へのジャンプ、命令テンプレート、構文チェック
+-- ネイティブウィンドウでのゲームテストプレイ
++- ネイティブウィンドウでのゲームテストプレイ（標準1280×720、フルスクリーン切替）
+ - 背景・立ち絵（left / center / right の固定位置）・複数レイヤー・口パク・画面内選択肢・分岐・変数・エンディング
+ - 選択肢はゲーム画面内にカード状で表示し、マウスクリックまたは数字キー（1〜9）で選択
+ - ゲーム画面内のクリックで文字送り。タイプライター表示中は1回目で全文表示、2回目で次へ進行
+@@ -83,7 +91,8 @@ GitHub Actions側でPythonとPyInstallerを自動セットアップします。
+ - 10スロットのセーブ／ロード、保存時画面のサムネイル、選択肢を含むゲーム状態の復元
+ - バックログで台詞と選択履歴を閲覧
+ - WAV形式のBGM／効果音／台詞音声（Windowsの標準機能を使用、台詞音声は口パクと同期）
+-- 画面文字設定：フォント、サイズ、色、太さ、揃え、会話ウィンドウ／全画面／字幕、位置、余白、透過、タイプライター速度
++- 画面・文字設定：ゲーム画面サイズ（1280×720／フルスクリーン）、フォント、サイズ、色、太さ、揃え、会話ウィンドウ／全画面テキスト／字幕、位置、余白、透過、タイプライター速度
++- F11／Alt+Enterで画面モード切替、フルスクリーン中Escでウィンドウに戻る
+ - Ctrl+S 保存、Ctrl+Enter テストプレイ、Ctrl+Z/Y 編集履歴
+
+diff --git a/TEST_REPORT.md b/TEST_REPORT.md
+index 70fc95b..f0a22cd 100644
+--- a/TEST_REPORT.md
++++ b/TEST_REPORT.md
+@@ -1,4 +1,4 @@
+-# NovelScript Engine v1.8 Desktop — Test Report
++# NovelScript Engine v1.9 Desktop — Test Report
+ 
+ ## Automated tests
+ 
+@@ -8,14 +8,14 @@
+   - 5-minute sample validation and four route combinations
+   - choice event order and targets retained
+   - unknown command warning, missing jump error and zero wait preserved
+-  - display settings normalization and persistence
++  - display settings normalization and persistence, including windowed/fullscreen mode
+   - interpreter state export / restore preserves variables, speaker and pending choices
+   - per-scenario save paths and slot range validation
+   - save-slot PNG path validation
+   - multi-layer commands, ordering, visibility, position, removal and save/restore
+   - mouth-open/closed layer settings, voice WAV command sequencing and .nproj round-trip
+ - Tkinter GUI smoke test under Xvfb: PASS
+-  - Native editor and player creation; asset and choice display
++  - Native editor and player creation; default 1280×720 canvas, mode switching hides/restores footer, asset and choice display
+   - Existing screen-click and typewriter behavior
+   - Right-click menu has Save/Load and Backlog commands
+   - Save slot restores pending choices, interpreter PC and backlog
+@@ -36,10 +36,10 @@
+ 
+ The Windows Actions build includes Pillow-based game-canvas capture in a single `NovelScriptEngine.exe` with Python/Tk/Tcl bundled. End-user Python installation is not required. Save files and display preferences are stored outside the EXE under `%APPDATA%\\NovelScriptEngine` and survive EXE updates.
+ 
+-## v1.8 regression results
++## v1.9 regression results
+ 
+ - `python -m py_compile app.py`: passed.
+ - `python -m unittest discover -s tests -p "test_*.py" -v`: 21 tests passed.
+-- `python tests/gui_smoke.py` on a virtual display: passed.
+-- Confirmed fixed `left` / `center` / `right` character anchors, removal of character coordinate state, v1.6 saved-coordinate migration, `.nproj` conversion to fixed anchors, click-through behavior on character art, and no drag movement of overlay layers.
+-- Confirmed v1.7 layer manager, visibility toggle, lip/voice layer state and save restoration remain operational.
++- `python tests/gui_smoke.py` on Xvfb: passed, including 1280×720 windowed canvas and windowed/fullscreen layout switching.
++- Fullscreen display mode is stored separately from the existing dialogue text layout; F11 / Alt+Enter toggle and Escape returns to windowed mode.
++- Windows Actions build remains the required native Windows EXE verification; a physical Windows 10/11 manual check is still needed.
+
+diff --git a/app.py b/app.py
+index 60b4b77..57bb1b2 100644
+--- a/app.py
++++ b/app.py
+@@ -1,5 +1,5 @@
+ # -*- coding: utf-8 -*-
+-"""NovelScript Engine v1.8 - native Windows desktop editor and player.
++"""NovelScript Engine v1.9 - native Windows desktop editor and player.
+ No browser, web server, CDN, or network access is used.
+ """
+ from __future__ import annotations
+@@ -26,10 +26,11 @@ except Exception:  # Preview capture is optional on unsupported desktop environments.
+     ImageGrab = None
+ 
+ APP_NAME = "NovelScript Engine"
+-APP_VERSION = "1.8 Desktop"
++APP_VERSION = "1.9 Desktop"
+ 
+ DEFAULT_DISPLAY_SETTINGS: dict[str, Any] = {
+     "layout": "window",
++    "screen_mode": "windowed",
+     "font_family": "Meiryo",
+     "font_size": 16,
+     "font_weight": "normal",
+@@ -63,6 +64,7 @@ def normalize_display_settings(value: Any) -> dict[str, Any]:
+         "layout": {"window", "fullscreen", "subtitle"},
++        "screen_mode": {"windowed", "fullscreen"},
+         "font_weight": {"normal", "bold"},
+         "text_align": {"left", "center", "right"},
+         "panel_pattern": {"", "gray25", "gray50", "gray75"},
+@@ -781,8 +783,8 @@ class NativePlayer:
+         self._save_preview_label = None
+         self.window = tk.Toplevel(app.root)
+         self.window.title("NovelScript Engine - テストプレイ")
+-        self.window.geometry("1040x760")
+-        self.window.minsize(820, 620)
++        self.window.geometry("1304x792")
++        self.window.minsize(900, 600)
+         self.window.configure(bg="#111827")
+         self.window.protocol("WM_DELETE_WINDOW", self.close)
+         self._bg_img = None; self._ch_img = None
+@@ -810,27 +812,78 @@ class NativePlayer:
+             self.audio = WindowsMciAudio(self.window) if sys.platform == "win32" else None
+         except Exception:
+             self.audio = None
+-        self.canvas = tk.Canvas(self.window, width=960, height=540, bg="#202938", highlightthickness=0)
++        # The game stage uses a 16:9 1280x720 logical canvas in windowed mode.
++        self.canvas = tk.Canvas(self.window, width=1280, height=720, bg="#202938", highlightthickness=0)
+         self.canvas.pack(fill="both", expand=True, padx=12, pady=(12, 6))
+         # Click anywhere on the game stage to advance. Choice item clicks are
+         # handled separately and return "break" so they cannot also advance.
+         self.canvas.bind("<Button-1>", self._on_canvas_click)
+         self.canvas.bind("<Button-3>", self._on_canvas_right_click)
+         self.window.bind("<Button-3>", self._on_canvas_right_click)
+-        foot = ttk.Frame(self.window, padding=(12, 6, 12, 12)); foot.pack(fill="x")
+-        self.status = ttk.Label(foot, text="テストプレイ中", anchor="w"); self.status.pack(side="left", fill="x", expand=True)
+-        self.next_btn = ttk.Button(foot, text="次へ ▶", command=self.next); self.next_btn.pack(side="right")
++        self.footer = ttk.Frame(self.window, padding=(12, 6, 12, 12)); self.footer.pack(fill="x")
++        self.status = ttk.Label(self.footer, text="テストプレイ中", anchor="w"); self.status.pack(side="left", fill="x", expand=True)
++        self.next_btn = ttk.Button(self.footer, text="次へ ▶", command=self.next); self.next_btn.pack(side="right")
+         self.window.bind("<space>", lambda e: self.next())
+         self.window.bind("<Return>", lambda e: self.next())
++        self.window.bind("<F11>", self._toggle_screen_mode)
++        self.window.bind("<Escape>", self._leave_fullscreen)
++        self.window.bind("<Alt-Return>", self._toggle_screen_mode)
+         for key_index in range(9):
+             self.window.bind(str(key_index + 1), lambda e, n=key_index: self.choose(n))
+         self.canvas.bind("<Configure>", self._on_canvas_resize)
++        self.screen_mode = "windowed"
++        self._set_screen_mode(self.display_settings.get("screen_mode", "windowed"), persist=False)
+         self.refresh_stage()
+         if initial_state is None:
+             self.step()
+         else:
+             self.restore_snapshot(initial_state)
+ 
++    def _set_screen_mode(self, mode: str, persist: bool = True):
++        """Switch the game stage between a 1280x720 window and monitor fullscreen."""
++        mode = mode if mode in {"windowed", "fullscreen"} else "windowed"
++        fullscreen = mode == "fullscreen"
++        try:
++            # Re-pack the canvas so no editor controls or margins consume game area.
++            self.canvas.pack_forget()
++            if fullscreen:
++                self.footer.pack_forget()
++                self.canvas.pack(fill="both", expand=True, padx=0, pady=0)
++                self.window.attributes("-fullscreen", True)
++            else:
++                self.window.attributes("-fullscreen", False)
++                self.canvas.pack(fill="both", expand=True, padx=12, pady=(12, 6))
++                if not self.footer.winfo_manager():
++                    self.footer.pack(fill="x")
++                self.window.geometry("1304x792")
++                self.window.minsize(900, 600)
++        except tk.TclError:
++            # Keep the app usable on window managers without fullscreen support.
++            if fullscreen:
++                try: self.window.state("zoomed")
++                except tk.TclError: pass
++            else:
++                try: self.window.state("normal")
++                except tk.TclError: pass
++        self.screen_mode = mode
++        self.display_settings["screen_mode"] = mode
++        if persist:
++            self.app.display_settings["screen_mode"] = mode
++            try:
++                save_display_settings(self.app.display_settings)
++            except OSError:
++                pass
++
++    def _toggle_screen_mode(self, _event=None):
++        self._set_screen_mode("windowed" if self.screen_mode == "fullscreen" else "fullscreen")
++        return "break"
++
++    def _leave_fullscreen(self, _event=None):
++        if self.screen_mode == "fullscreen":
++            self._set_screen_mode("windowed")
++            return "break"
++        return None
++
+     def asset_path(self, rel: str) -> Path | None:
+         if not rel: return None
+         candidates = [self.base_dir / rel, resource_path(rel)]
+@@ -1696,9 +1749,9 @@ class NovelScriptApp:
+ 
+         header = ttk.Frame(self.root, padding=(16, 12)); header.pack(fill="x")
+         ttk.Label(header, text="NovelScript Engine", style="Title.TLabel").pack(side="left")
+-        ttk.Label(header, text="  v1.8 Desktop  |  Windowsネイティブ版・オフライン", style="Sub.TLabel").pack(side="left", padx=(8, 0), pady=(7, 0))
++        ttk.Label(header, text="  v1.9 Desktop  |  Windowsネイティブ版・オフライン", style="Sub.TLabel").pack(side="left", padx=(8, 0), pady=(7, 0))
+         toolbar = ttk.Frame(header); toolbar.pack(side="right")
+-        for label, fn in [("新規", self.new_file), ("開く", self.open_file), ("保存", self.save_file), ("別名保存", self.save_as), ("構文チェック", self.validate), ("文字表示設定", self.open_display_settings), ("▶ テストプレイ", self.play)]:
++        for label, fn in [("新規", self.new_file), ("開く", self.open_file), ("保存", self.save_file), ("別名保存", self.save_as), ("構文チェック", self.validate), ("画面・文字設定", self.open_display_settings), ("▶ テストプレイ", self.play)]:
+             ttk.Button(toolbar, text=label, command=fn, style="Accent.TButton" if label.startswith("▶") else "TButton").pack(side="left", padx=3)
+ 
+         body = ttk.Panedwindow(self.root, orient="horizontal"); body.pack(fill="both", expand=True, padx=12, pady=(0, 8))
+@@ -1752,9 +1805,9 @@ class NovelScriptApp:
+     def open_display_settings(self):
+         """Open the visual novel dialogue appearance editor."""
+         win = tk.Toplevel(self.root)
+-        win.title("画面の文字表示設定")
+-        win.geometry("760x760")
+-        win.minsize(680, 660)
++        win.title("画面・文字表示設定")
++        win.geometry("800x800")
++        win.minsize(700, 680)
+         win.transient(self.root)
+         win.grab_set()
+ 
+@@ -1762,7 +1815,7 @@ class NovelScriptApp:
+         families = sorted(set(tkfont.families(self.root)), key=str.casefold)
+         if draft["font_family"] not in families: families.insert(0, draft["font_family"])
+         outer = ttk.Frame(win, padding=14); outer.pack(fill="both", expand=True)
+-        ttk.Label(outer, text="ゲーム画面の文字・会話ウィンドウの見た目を変更します。", font=("Meiryo UI", 10, "bold")).pack(anchor="w", pady=(0, 10))
++        ttk.Label(outer, text="ゲーム画面のサイズ・表示モードと、文字・会話ウィンドウの見た目を変更します。", font=("Meiryo UI", 10, "bold")).pack(anchor="w", pady=(0, 10))
+         body = ttk.Frame(outer); body.pack(fill="both", expand=True)
+         left = ttk.Frame(body); left.pack(side="left", fill="both", expand=True, padx=(0, 12))
+         right = ttk.LabelFrame(body, text="プレビュー", padding=8); right.pack(side="right", fill="y")
+ 
+         vars: dict[str, Any] = {}
+         color_buttons: dict[str, ttk.Button] = {}
+         localized_values = {
+             "layout": {"window":"会話ウィンドウ", "fullscreen":"全画面テキスト", "subtitle":"字幕スタイル"},
++            "screen_mode": {"windowed":"ウィンドウ（1280×720）", "fullscreen":"フルスクリーン"},
+             "font_weight": {"normal":"標準", "bold":"太字"},
+             "text_align": {"left":"左寄せ", "center":"中央揃え", "right":"右寄せ"},
+             "panel_pattern": {"gray25":"薄く表示", "gray50":"半透明風", "gray75":"濃く表示", "":"不透明"},
+@@ -1803,7 +1857,8 @@ class NovelScriptApp:
+                 vars[key]=chosen[1];button.configure(text=chosen[1]);update_preview()
+ 
+         row=0
+-        add_combo(left,row,"表示レイアウト","layout",["window","fullscreen","subtitle"],["会話ウィンドウ","全画面テキスト","字幕スタイル"]);row+=1
++        add_combo(left,row,"ゲーム画面サイズ","screen_mode",["windowed","fullscreen"],["ウィンドウ（1280×720）","フルスクリーン"]);row+=1
++        add_combo(left,row,"文字の表示レイアウト","layout",["window","fullscreen","subtitle"],["会話ウィンドウ","全画面テキスト","字幕スタイル"]);row+=1
+         add_combo(left,row,"フォント","font_family",families);row+=1
+         add_spin(left,row,"文字サイズ（pt）","font_size",10,48);row+=1
+         add_combo(left,row,"文字の太さ","font_weight",["normal","bold"],["標準","太字"]);row+=1
+@@ -1831,6 +1886,7 @@ class NovelScriptApp:
+                     values[key] = DEFAULT_DISPLAY_SETTINGS[key]
+             # Translate localized combo labels back to internal values.
+             for key, mapping in (("layout",{"会話ウィンドウ":"window","全画面テキスト":"fullscreen","字幕スタイル":"subtitle"}),
++                                 ("screen_mode",{"ウィンドウ（1280×720）":"windowed","フルスクリーン":"fullscreen"}),
+                                  ("font_weight",{"標準":"normal","太字":"bold"}),
+                                  ("text_align",{"左寄せ":"left","中央揃え":"center","右寄せ":"right"}),
+                                  ("panel_pattern",{"薄く表示":"gray25","半透明風":"gray50","濃く表示":"gray75","不透明":""}),
+@@ -1863,7 +1919,7 @@ class NovelScriptApp:
+             try: save_display_settings(self.display_settings)
+             except OSError as exc:
+                 messagebox.showerror("設定保存エラー",f"表示設定を保存できませんでした。\n{exc}",parent=win);return
+-            self.status.configure(text="画面の文字表示設定を保存しました")
++            self.status.configure(text="画面・文字表示設定を保存しました（ゲーム画面モードは次回テストプレイから適用）")
+             if close: win.destroy()
+         def reset():
+             for key,v in vars.items():
+@@ -1878,3 +1934,3 @@
+diff --git a/tests/gui_smoke.py b/tests/gui_smoke.py
+index ba32e22..42c9e23 100644
+--- a/tests/gui_smoke.py
++++ b/tests/gui_smoke.py
+@@ -13,6 +13,15 @@
+ p=json.loads((ROOT/'examples/testplay_5min.nproj').read_text(encoding='utf-8'))
+ src=project_to_nse(p)
+ player=NativePlayer(app,src,ROOT/'examples')
+ root.update_idletasks(); root.update()
++assert player.canvas.winfo_reqwidth() == 1280 and player.canvas.winfo_reqheight() == 720, 'windowed game canvas must request 1280x720'
++assert player.canvas.winfo_width() == 1280 and player.canvas.winfo_height() == 720, f'windowed game canvas must render at 1280x720, got {player.canvas.winfo_width()}x{player.canvas.winfo_height()}'
++assert player.screen_mode == 'windowed' and player.footer.winfo_manager(), 'windowed mode should keep the footer visible'
++player._set_screen_mode('fullscreen', persist=False)
++root.update_idletasks(); root.update()
++assert player.screen_mode == 'fullscreen' and not player.footer.winfo_manager(), 'fullscreen mode should hide the footer and fill the stage'
++player._set_screen_mode('windowed', persist=False)
++root.update_idletasks(); root.update()
++assert player.screen_mode == 'windowed' and player.footer.winfo_manager(), 'leaving fullscreen should restore the windowed layout'
+ # Advance through the first route until the runtime presents its choice overlay.
+ for _ in range(120):
+     if player.current_choices:
+@@ -193,4 +193,4 @@
+ click_player.close(); root.destroy()
+-print('GUI smoke passed: click-to-advance, fixed character anchors, non-draggable layers, right-click menu, 10-slot save/load, manager visibility, lip configuration, backlog and choice state')
++print('GUI smoke passed: 1280x720 windowed stage, screen-mode switching, click-to-advance, fixed character anchors, non-draggable layers, right-click menu, 10-slot save/load, manager visibility, lip configuration, backlog and choice state')
