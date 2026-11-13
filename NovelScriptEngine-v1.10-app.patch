@@ -331,7 +331,7 @@
 +        self._shake_item_ids = ()
 +        self._effect_photo = None
          if self._wait_job is not None:
-             try: self.window.after_cancel(self._effect_job)
+             try: self.window.after_cancel(self._wait_job)
              except tk.TclError: pass
 @@ -1749,7 +1960,7 @@
  
