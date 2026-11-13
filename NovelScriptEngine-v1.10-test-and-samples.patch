@@ -1,0 +1,139 @@
+--- a/tests/test_desktop.py
++++ b/tests/test_desktop.py
+@@ -230,6 +230,46 @@
+         for fragment in ('layer "body" "assets/body.png" 30 70 12', 'lip "mouth" "closed.png" "open.png" 31 69 40 150', 'voice "line.wav" 75', 'layerhide "body"', 'layerpos "body" 35 65', 'layerorder "body" 20'):
+             self.assertIn(fragment, exported)
+ 
++    def test_script_visual_effect_commands_emit_blocking_events(self):
++        source = '''*start
++fadeout 420 #000000
++bgfade "assets/bg_riverside.svg" 650
++flash #ffffff 160
++shake 300 9
++fadein 500 #000000
++text "演出確認"
++end
++'''
++        engine = ScenarioEngine(source)
++        self.assertEqual(engine.advance(), {"type": "effect", "effect": "fadeout", "ms": 420, "color": "#000000"})
++        self.assertEqual(engine.advance(), {"type": "effect", "effect": "bgfade", "ms": 650, "color": "#000000", "previous_background": ""})
++        self.assertEqual(engine.background, "assets/bg_riverside.svg")
++        self.assertEqual(engine.advance(), {"type": "effect", "effect": "flash", "ms": 160, "color": "#ffffff"})
++        self.assertEqual(engine.advance(), {"type": "effect", "effect": "shake", "ms": 300, "intensity": 9})
++        self.assertEqual(engine.advance(), {"type": "effect", "effect": "fadein", "ms": 500, "color": "#000000"})
++        self.assertEqual(engine.advance(), {"type": "text", "text": "演出確認", "speaker": ""})
++
++    def test_visual_effect_validation_and_project_roundtrip(self):
++        valid = '''*start
++fadeout 500 #000000
++fadein 300 #000000
++flash #ffffff 180
++shake 350 8
++bgfade "assets/bg_shrine.svg" 700
++end
++'''
++        self.assertFalse([x for x in validate_script(valid) if x[0] == "エラー"])
++        invalid = '''*start
++fadeout 12000 #xyz
++flash red -5
++shake 200 99
++bgfade "bg.png" 20000
++'''
++        self.assertTrue([x for x in validate_script(invalid) if x[0] == "エラー"])
++        exported = project_to_nse(nse_to_project(valid))
++        for command in ("fadeout 500 #000000", "fadein 300 #000000", "flash #ffffff 180", "shake 350 8", 'bgfade "assets/bg_shrine.svg" 700'):
++            self.assertIn(command, exported)
++
+     def test_quote_error(self):
+         issues=validate_script('*start\ntext "broken\nend')
+         self.assertTrue(any(x[0]=='エラー' for x in issues))
+--- a/tests/gui_smoke.py
++++ b/tests/gui_smoke.py
+@@ -1,4 +1,4 @@
+-import json, os, sys, tempfile, tkinter as tk
++import json, os, sys, tempfile, time, tkinter as tk
+ from pathlib import Path
+ from unittest.mock import patch
+ ROOT=Path(__file__).resolve().parents[1]
+@@ -200,5 +200,28 @@
+         assert click_player._typing_text == 'Bルートに入りました'
+         assert any(x['kind'] == 'choice' and x['text'] == 'Bルートへ進む' for x in click_player.backlog)
+ 
++# Visual effects run as blocking, timed transitions without letting clicks skip them.
++effect_script='''*start
++bg "assets_png/bg_station.png"
++fadeout 40 #000000
++bgfade "assets_png/bg_riverside.png" 60
++flash #ffffff 40
++shake 50 4
++fadein 40 #000000
++text "演出テスト完了"
++end
++'''
++effect_player=NativePlayer(app,effect_script,ROOT)
++root.update_idletasks(); root.update()
++assert effect_player._effect_job is not None, 'fadeout should start a blocking animation'
++assert str(effect_player.next_btn["state"]) == 'disabled', 'advance button must be disabled during a visual effect'
++end_time=time.monotonic()+1.5
++while time.monotonic()<end_time and effect_player._typing_text != '演出テスト完了':
++    root.update_idletasks(); root.update(); time.sleep(0.01)
++assert effect_player._typing_text == '演出テスト完了', 'all effects should finish and resume the script'
++assert effect_player.engine.background == 'assets_png/bg_riverside.png'
++assert effect_player._screen_cover is None and effect_player._effect_job is None, 'fadein should restore a clear scene'
++effect_player.close()
++
+ click_player.close(); root.destroy()
+-print('GUI smoke passed: 1280x720 windowed stage, screen-mode switching, click-to-advance, fixed character anchors, non-draggable layers, right-click menu, 10-slot save/load, manager visibility, lip configuration, backlog and choice state')
++print('GUI smoke passed: 1280x720 windowed stage, screen-mode switching, fade/flash/shake/background transitions, click-to-advance, fixed character anchors, non-draggable layers, right-click menu, 10-slot save/load, manager visibility, lip configuration, backlog and choice state')
+--- a/examples/sample_5min.nse
++++ b/examples/sample_5min.nse
+@@ -2,6 +2,7 @@
+ ; Original sample assets are in ./assets and described in ASSET_CREDITS.md
+ *start
+ bg "assets/bg_station.svg"
++fadein 650 #000000
+ bgm "assets/bgm_station.wav" 42
+ se "assets/ambience_rain.wav" 12
+ chara "mio" "assets/mio_neutral.svg" center
+@@ -9,6 +10,7 @@
+ text "終電が出てから、もう十分は経った。駅の時計は午後十一時を少し回り、雨はホームの屋根を細かく叩いている。"
+ text "帰る理由なら、いくらでもあった。それでも僕は、濡れたベンチの端に座り続けていた。"
+ se "assets/se_station_chime.wav" 52
++flash #ffffff 140
+ name "美緒"
+ text "……まだ、いたんだ。"
+ chara "mio" "assets/mio_worried.svg" center
+@@ -42,7 +44,7 @@
+ text "電車はもうない。けれど、彼女はすぐに帰ろうとはしなかった。"
+ jump riverside
+ *riverside
+-bg "assets/bg_riverside.svg"
++bgfade "assets/bg_riverside.svg" 700
+ bgm "assets/bgm_memory.wav" 48
+ se "assets/se_footsteps.wav" 30
+ name "主人公"
+@@ -63,6 +65,7 @@
+ text "一緒に読もう。最後まで読んだら、返事の言葉も見つかるかもしれない。"
+ name "美緒"
+ chara "mio" "assets/mio_worried.svg" center
++shake 260 5
+ text "封を切る音は、雨上がりの夜に小さく響いた。便箋には、懐かしい丸い文字が並んでいた。"
+ text "『あの日、駅で待っていてくれてありがとう。あなたと過ごした時間は、離れていても私の帰る場所です』。"
+ text "美緒の目から涙がこぼれた。でも、その顔にはもう迷いだけではない、やわらかな光があった。
+--- /dev/null
++++ b/examples/visual_effects.nse
+@@ -0,0 +1,14 @@
++; NovelScript Engine v1.10 - visual effects demonstration
++*start
++bg "assets/bg_station.svg"
++fadein 700 #000000
++name "演出サンプル"
++text "駅のホームに、静かな夜が降りている。"
++flash #ffffff 140
++text "遠くで、短い光が瞬いた。"
++shake 320 7
++text "足元が小さく揺れ、視界がぶれる。"
++bgfade "assets/bg_riverside.svg" 750
++text "場面は川沿いへ。水面に街灯が映っている。"
++fadeout 650 #000000
++end
