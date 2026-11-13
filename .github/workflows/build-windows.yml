@@ -47,7 +47,7 @@ jobs:
           }
           Push-Location $env:SOURCE_DIR
           try {
-            git apply --recount $patch
+            git apply --ignore-whitespace --ignore-space-change --recount $patch
           } finally {
             Pop-Location
           }
