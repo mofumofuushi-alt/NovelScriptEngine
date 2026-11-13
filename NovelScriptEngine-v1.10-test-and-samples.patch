@@ -137,3 +137,51 @@
 +text "場面は川沿いへ。水面に街灯が映っている。"
 +fadeout 650 #000000
 +end
+
+
+--- /dev/null
++++ b/examples/visual_effects_showcase.nse
+@@ -0,0 +1,38 @@
++; NovelScript Engine v1.10
++; Visual effects showcase - all five effect commands in one playable scenario.
++; Open this file in the editor and start Test Play.
++*start
++bg "assets/bg_station.svg"
++name "演出テスト"
++fadein 900 #000000
++text "【1 / フェードイン】"
++text "黒い画面から、駅のホームがゆっくり現れます。"
++text "次は白いフラッシュです。"
++flash #ffffff 220
++text "【2 / 白フラッシュ】"
++text "画面全体が一瞬、白く光りました。"
++text "続いて赤いフラッシュです。"
++flash #ff3030 260
++text "【3 / 赤フラッシュ】"
++text "警告や衝撃を表現する色違いの例です。"
++text "まずは弱い画面揺れです。"
++shake 420 4
++text "【4 / 弱い画面揺れ】"
++text "小さな振動を表現しました。"
++text "次は強い画面揺れです。"
++shake 650 16
++text "【5 / 強い画面揺れ】"
++text "大きな衝撃を表現しました。"
++text "背景を暗転させながら川沿いへ切り替えます。"
++bgfade "assets/bg_riverside.svg" 900
++text "【6 / 背景切替】"
++text "駅から川沿いへ、暗転を挟んで場面が変わりました。"
++text "ここからは演出を組み合わせます。"
++flash #fff2b0 180
++shake 380 7
++text "光と揺れを連続して使った演出です。"
++text "白い画面から次の場面を表示します。"
++fadeout 650 #ffffff
++bg "assets/bg_station.svg"
++fadein 850 #ffffff
++text "【7 / 白フェードアウト・フェードイン】"
++text "白を使った場面転換も確認できました。"
++fadeout 800 #000000
++text "【テスト完了】"
++text "フェードイン／アウト、背景切替、フラッシュ、画面揺れの確認は終了です。"
++end
