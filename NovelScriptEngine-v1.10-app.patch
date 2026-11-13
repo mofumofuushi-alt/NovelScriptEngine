@@ -1,0 +1,341 @@
+--- a/app.py
++++ b/app.py
+@@ -1,5 +1,5 @@
+ # -*- coding: utf-8 -*-
+-"""NovelScript Engine v1.9 - native Windows desktop editor and player.
++"""NovelScript Engine v1.10 - native Windows desktop editor and player.
+ No browser, web server, CDN, or network access is used.
+ """
+ from __future__ import annotations
+@@ -20,13 +20,14 @@
+ from typing import Any
+ 
+ try:
+-    from PIL import Image, ImageGrab
++    from PIL import Image, ImageGrab, ImageTk
+ except Exception:  # Preview capture is optional on unsupported desktop environments.
+     Image = None
+     ImageGrab = None
++    ImageTk = None
+ 
+ APP_NAME = "NovelScript Engine"
+-APP_VERSION = "1.9 Desktop"
++APP_VERSION = "1.10 Desktop"
+ 
+ DEFAULT_DISPLAY_SETTINGS: dict[str, Any] = {
+     "layout": "window",
+@@ -137,6 +138,11 @@
+     "bgm": 'bgm "assets/bgm_station.wav" 50',
+     "se": 'se "assets/se_station_chime.wav" 60',
+     "wait": 'wait 500',
++    "fadeout": 'fadeout 500 #000000',
++    "fadein": 'fadein 500 #000000',
++    "flash": 'flash #ffffff 180',
++    "shake": 'shake 350 8',
++    "bgfade": 'bgfade "assets/bg_riverside.svg" 600',
+     "select": 'select "選択肢の文章" next_label',
+     "jump": 'jump next_label',
+     "set": 'set route 1',
+@@ -184,7 +190,7 @@
+     issues: list[tuple[str, int, str]] = []
+     labels: dict[str, int] = {}
+     references: list[tuple[int, str, str]] = []
+-    known = {"label", "text", "msg", "name", "bg", "chara", "layer", "lip", "voice", "layerhide", "layershow", "layerpos", "layerorder", "layerremove", "bgm", "se", "wait", "jump", "select", "set", "inc", "if", "endif", "endflag", "clear", "end"}
++    known = {"label", "text", "msg", "name", "bg", "chara", "layer", "lip", "voice", "layerhide", "layershow", "layerpos", "layerorder", "layerremove", "bgm", "se", "wait", "fadeout", "fadein", "flash", "shake", "bgfade", "jump", "select", "set", "inc", "if", "endif", "endflag", "clear", "end"}
+     for no, original in enumerate(source.replace("﻿", "").splitlines(), 1):
+         line = original.strip()
+         if not line or line.startswith(";") or line.startswith("//"):
+@@ -209,7 +215,7 @@
+         if op not in known:
+             issues.append(("警告", no, f"未知の命令 '{op}'（実行時には無視される可能性があります）"))
+             continue
+-        minimum = {"text": 1, "msg": 1, "name": 1, "bg": 1, "chara": 1, "layer": 5, "lip": 6, "voice": 1, "layerhide": 1, "layershow": 1, "layerpos": 3, "layerorder": 2, "layerremove": 1, "bgm": 1, "se": 1, "wait": 1, "jump": 1, "select": 2, "set": 2, "inc": 1, "if": 5, "endflag": 1}.get(op, 0)
++        minimum = {"text": 1, "msg": 1, "name": 1, "bg": 1, "chara": 1, "layer": 5, "lip": 6, "voice": 1, "layerhide": 1, "layershow": 1, "layerpos": 3, "layerorder": 2, "layerremove": 1, "bgm": 1, "se": 1, "wait": 1, "fadeout": 0, "fadein": 0, "flash": 0, "shake": 0, "bgfade": 1, "jump": 1, "select": 2, "set": 2, "inc": 1, "if": 5, "endflag": 1}.get(op, 0)
+         if len(args) < minimum:
+             issues.append(("エラー", no, f"命令 '{op}' の引数が不足しています（必要 {minimum} 個）"))
+             continue
+@@ -229,6 +235,39 @@
+                 issues.append(("エラー", no, "chara の位置は left / center / right のいずれかを指定してください"))
+             elif len(args) < 3:
+                 issues.append(("警告", no, "chara の表示には actor・画像パス・位置（left / center / right）の指定を推奨します"))
++        if op in {"fadeout", "fadein"}:
++            if len(args) > 2:
++                issues.append(("エラー", no, f"{op} は [時間ms] [色] の形式です"))
++            try:
++                if args and not (0 <= int(float(args[0])) <= 10000): raise ValueError()
++            except (ValueError, TypeError):
++                issues.append(("エラー", no, f"{op} の時間は0〜10000msで指定してください"))
++            if len(args) > 1 and not re.fullmatch(r"#[0-9a-fA-F]{6}", args[1]):
++                issues.append(("エラー", no, f"{op} の色は #RRGGBB 形式で指定してください"))
++        if op == "flash":
++            if len(args) > 2 or (args and not re.fullmatch(r"#[0-9a-fA-F]{6}", args[0])):
++                issues.append(("エラー", no, "flash は [色] [時間ms] の形式です（色は #RRGGBB）"))
++            if len(args) > 1:
++                try:
++                    if not (0 <= int(float(args[1])) <= 10000): raise ValueError()
++                except (ValueError, TypeError):
++                    issues.append(("エラー", no, "flash の時間は0〜10000msで指定してください"))
++        if op == "shake":
++            if len(args) > 2:
++                issues.append(("エラー", no, "shake は [時間ms] [強さ] の形式です"))
++            try:
++                if args and not (0 <= int(float(args[0])) <= 10000): raise ValueError()
++                if len(args) > 1 and not (1 <= int(float(args[1])) <= 40): raise ValueError()
++            except (ValueError, TypeError):
++                issues.append(("エラー", no, "shake の時間は0〜10000ms、強さは1〜40で指定してください"))
++        if op == "bgfade":
++            if len(args) > 2:
++                issues.append(("エラー", no, "bgfade は画像パスと時間ms（省略可）を指定してください"))
++            if len(args) > 1:
++                try:
++                    if not (0 <= int(float(args[1])) <= 10000): raise ValueError()
++                except (ValueError, TypeError):
++                    issues.append(("エラー", no, "bgfade の時間は0〜10000msで指定してください"))
+         if op in {"layer", "lip"} and len(args) >= minimum:
+             try:
+                 x, y = float(args[2] if op == "layer" else args[3]), float(args[3] if op == "layer" else args[4])
+@@ -291,6 +330,10 @@
+             elif kind == "endflag": out.append(f"endflag {block.get('ending','ending')}")
+             elif kind == "end": out.append("end")
+             elif kind == "wait": out.append(f"wait {block.get('duration',500)}")
++            elif kind in {"fadeout", "fadein"}: out.append(f"{kind} {int(block.get('duration',500))} {block.get('color','#000000')}")
++            elif kind == "flash": out.append(f"flash {block.get('color','#ffffff')} {int(block.get('duration',180))}")
++            elif kind == "shake": out.append(f"shake {int(block.get('duration',350))} {int(block.get('intensity',8))}")
++            elif kind == "bgfade": out.append(f"bgfade {quote(block.get('path',''))} {int(block.get('duration',600))}")
+             elif kind == "clear": out.append("clear")
+         out.append("")
+     return "
+".join(out).rstrip() + "
+"
+@@ -341,6 +384,10 @@
+         elif op == "layerpos" and len(a)>=3: block = {"type": "layerpos", "layer_id": a[0], "x": float(a[1]), "y": float(a[2])}
+         elif op == "layerorder" and len(a)>=2: block = {"type": "layerorder", "layer_id": a[0], "z": int(float(a[1]))}
+         elif op == "wait": block = {"type": "wait", "duration": int(float(a[0])) if a else 500}
++        elif op in {"fadeout", "fadein"}: block = {"type": op, "duration": int(float(a[0])) if a else 500, "color": a[1] if len(a)>1 else "#000000"}
++        elif op == "flash": block = {"type": "flash", "color": a[0] if a else "#ffffff", "duration": int(float(a[1])) if len(a)>1 else 180}
++        elif op == "shake": block = {"type": "shake", "duration": int(float(a[0])) if a else 350, "intensity": int(float(a[1])) if len(a)>1 else 8}
++        elif op == "bgfade": block = {"type": "bgfade", "path": a[0] if a else "", "duration": int(float(a[1])) if len(a)>1 else 600}
+         elif op == "select" and len(a)>=2: block = {"type": "select", "text": " ".join(a[:-1]), "target": a[-1]}
+         elif op == "jump" and a: block = {"type": "jump", "target": a[0]}
+         elif op == "set" and len(a)>=2: block = {"type": "set", "variable": a[0], "value": " ".join(a[1:])}
+@@ -633,6 +680,23 @@
+                 self.last_se_volume = max(0, min(100, int(float(a[1])))) if len(a) > 1 else 100
+                 continue
+             if op == "wait": return {"type": "wait", "ms": max(0, int(float(a[0] or 0)))}
++            if op in {"fadeout", "fadein"}:
++                duration = max(0, min(10000, int(float(a[0])))) if a else 500
++                color = a[1] if len(a) > 1 else "#000000"
++                return {"type": "effect", "effect": op, "ms": duration, "color": color}
++            if op == "flash":
++                color = a[0] if a else "#ffffff"
++                duration = max(0, min(10000, int(float(a[1])))) if len(a) > 1 else 180
++                return {"type": "effect", "effect": "flash", "ms": duration, "color": color}
++            if op == "shake":
++                duration = max(0, min(10000, int(float(a[0])))) if a else 350
++                intensity = max(1, min(40, int(float(a[1])))) if len(a) > 1 else 8
++                return {"type": "effect", "effect": "shake", "ms": duration, "intensity": intensity}
++            if op == "bgfade":
++                previous_background = self.background
++                self.background = a[0]
++                duration = max(0, min(10000, int(float(a[1])))) if len(a) > 1 else 600
++                return {"type": "effect", "effect": "bgfade", "ms": duration, "color": "#000000", "previous_background": previous_background}
+             if op == "jump":
+                 target = a[0]
+                 if target not in self.labels: raise ValueError(f"ラベルがありません: {target}")
+@@ -799,6 +863,12 @@
+         self._typing_index = 0
+         self._dialog_text_id = None
+         self._resize_job = None
++        self._effect_job = None
++        self._effect_photo = None
++        self._effect_overlay_id = None
++        self._screen_cover: tuple[str, int] | None = None
++        self._shake_item_ids: tuple[int, ...] = ()
++        self._shake_last_offset = (0, 0)
+         self._layer_photo_cache: dict[str, tk.PhotoImage] = {}
+         self._layer_manager = None
+         self._layer_tree = None
+@@ -912,6 +982,136 @@
+         if self.window.winfo_exists():
+             visible = self._typing_text[:self._typing_index] if self._typing_job is not None else self._typing_text
+             self.refresh_stage(visible, self._typing_speaker, self.current_choices)
++
++    def _draw_screen_cover(self, color: str | None = None, alpha: int | None = None):
++        """Draw a translucent full-stage overlay; Pillow gives smooth alpha on Tk 8.6."""
++        if color is None or alpha is None:
++            if self._screen_cover is None:
++                if self._effect_overlay_id is not None:
++                    try: self.canvas.delete(self._effect_overlay_id)
++                    except tk.TclError: pass
++                self._effect_overlay_id = None
++                self._effect_photo = None
++                return
++            color, alpha = self._screen_cover
++        alpha = max(0, min(255, int(alpha)))
++        if alpha <= 0:
++            if self._effect_overlay_id is not None:
++                self.canvas.delete(self._effect_overlay_id)
++            self._effect_overlay_id = None
++            self._effect_photo = None
++            return
++        w = max(1, self.canvas.winfo_width())
++        h = max(1, self.canvas.winfo_height())
++        try:
++            rgb = tuple(int(color[i:i+2], 16) for i in (1, 3, 5))
++        except (ValueError, TypeError, IndexError):
++            rgb = (0, 0, 0)
++            color = "#000000"
++        if Image is not None and ImageTk is not None:
++            rgba = Image.new("RGBA", (w, h), rgb + (alpha,))
++            photo = ImageTk.PhotoImage(rgba, master=self.window)
++            if self._effect_overlay_id is None:
++                self._effect_overlay_id = self.canvas.create_image(0, 0, image=photo, anchor="nw", tags=("effect-overlay",))
++            else:
++                self.canvas.itemconfigure(self._effect_overlay_id, image=photo)
++                self.canvas.coords(self._effect_overlay_id, 0, 0)
++            self._effect_photo = photo
++        else:
++            # Fallback for a Pillow-free developer environment.
++            pattern = "" if alpha >= 245 else ("gray75" if alpha >= 180 else ("gray50" if alpha >= 110 else ("gray25" if alpha >= 45 else "gray12")))
++            if self._effect_overlay_id is not None:
++                self.canvas.delete(self._effect_overlay_id)
++            self._effect_overlay_id = self.canvas.create_rectangle(0, 0, w, h, fill=color, outline="", stipple=pattern, tags=("effect-overlay",))
++
++    def _run_visual_effect(self, event: dict[str, Any]):
++        """Play a blocking script effect and resume the interpreter when it ends."""
++        if self._effect_job is not None:
++            try: self.window.after_cancel(self._effect_job)
++            except tk.TclError: pass
++            self._effect_job = None
++        kind = str(event.get("effect", "flash"))
++        duration = max(0, min(10000, int(event.get("ms", 300))))
++        color = str(event.get("color", "#000000"))
++        if not re.fullmatch(r"#[0-9a-fA-F]{6}", color): color = "#000000"
++        visible = self._typing_text[:self._typing_index] if self._typing_job is not None else self._typing_text
++        if kind == "bgfade":
++            # Render the previous background first; the interpreter already stores the new one.
++            new_background = self.engine.background
++            self.engine.background = str(event.get("previous_background", ""))
++            self.refresh_stage(visible, self._typing_speaker, self.current_choices)
++            self.engine.background = new_background
++        else:
++            # Commands such as bg/chara immediately before an effect are reflected first.
++            self.refresh_stage(visible, self.engine.speaker, self.current_choices)
++        if kind == "shake":
++            self._shake_item_ids = tuple(i for i in self.canvas.find_all() if i != self._effect_overlay_id)
++            self._shake_last_offset = (0, 0)
++            intensity = max(1, min(40, int(event.get("intensity", 8))))
++            frames = max(1, min(24, duration // 18 if duration else 1))
++            start = time.monotonic()
++            def shake_frame(index=0):
++                elapsed = (time.monotonic() - start) * 1000
++                progress = min(1.0, elapsed / max(1, duration))
++                if progress >= 1.0 or duration == 0:
++                    dx, dy = self._shake_last_offset
++                    if self._shake_item_ids: self.canvas.move(self._shake_item_ids, -dx, -dy)
++                    self._shake_last_offset = (0, 0)
++                    self._shake_item_ids = ()
++                    self._effect_job = None
++                    self.step()
++                    return
++                envelope = 1.0 - progress
++                phase = index % 4
++                offset = ((int(intensity * envelope), 0), (0, -int(intensity * envelope)), (-int(intensity * envelope), 0), (0, int(intensity * envelope)))[phase]
++                dx, dy = offset
++                old_x, old_y = self._shake_last_offset
++                if self._shake_item_ids: self.canvas.move(self._shake_item_ids, dx-old_x, dy-old_y)
++                self._shake_last_offset = offset
++                self._effect_job = self.window.after(18, lambda: shake_frame(index+1))
++            shake_frame()
++            return
++
++        # For bgfade, keep the old picture visible until the screen is covered,
++        # then redraw the new background underneath and reveal it smoothly.
++        if kind == "fadein":
++            self._screen_cover = (color, 255)
++            self._draw_screen_cover()
++            start_alpha, end_alpha = 255, 0
++        elif kind == "fadeout":
++            start_alpha, end_alpha = 0, 255
++        elif kind == "bgfade":
++            start_alpha, end_alpha = 0, 255
++        else:  # flash
++            start_alpha, end_alpha = 220, 0
++        frames = max(1, min(24, duration // 24 if duration else 1))
++        interval = max(16, duration // frames) if duration else 0
++        start = time.monotonic()
++        midpoint_done = False
++        def cover_frame():
++            nonlocal midpoint_done
++            elapsed = (time.monotonic() - start) * 1000
++            progress = 1.0 if duration == 0 else min(1.0, elapsed / duration)
++            alpha = int(start_alpha + (end_alpha-start_alpha) * progress)
++            self._draw_screen_cover(color, alpha)
++            if kind == "bgfade" and progress >= 0.5 and not midpoint_done:
++                midpoint_done = True
++                visible = self._typing_text[:self._typing_index] if self._typing_job is not None else self._typing_text
++                self.refresh_stage(visible, self._typing_speaker, self.current_choices)
++                # Reapply full cover after the scene redraw.
++                self._draw_screen_cover(color, alpha)
++            if progress < 1.0:
++                self._effect_job = self.window.after(interval or 1, cover_frame)
++                return
++            self._effect_job = None
++            if kind == "fadeout":
++                self._screen_cover = (color, 255)
++                self._draw_screen_cover()
++            else:
++                self._screen_cover = None
++                self._draw_screen_cover()
++            self.step()
++        cover_frame()
+ 
+     def _choice_hover_fill(self, base: str) -> str:
+         """Return a slightly brighter/darker variant for a hovered choice card."""
+@@ -1118,6 +1318,7 @@
+             text=(f"選択肢: {len(choices)}件  |  クリックまたは数字キーで選択" if choices else
+                   f"シーン: {self.engine.pc}/{len(self.engine.commands)}  |  話者: {speaker or 'なし'}  |  画面クリックまたは「次へ」で文字送り")
+         )
++        self._draw_screen_cover()
+ 
+     def _animate_text(self):
+         self._typing_job = None
+@@ -1554,7 +1755,7 @@
+         """Advance on stage clicks, including clicks on visible character art."""
+         # Choices and timed waits require their own action; a background or
+         # dialogue click must not accidentally skip either state.
+-        if self.current_choices or str(self.next_btn["state"]) == "disabled":
++        if self._effect_job is not None or self.current_choices or str(self.next_btn["state"]) == "disabled":
+             return "break"
+         self.next()
+         return "break"
+@@ -1659,6 +1860,10 @@
+             self.current_choices = list(event["choices"])
+             self.refresh_stage(self._typing_text, self._typing_speaker, self.current_choices)
+             self.next_btn.configure(state="disabled", text="選択してください")
++        elif event["type"] == "effect":
++            self._typing_index = len(self._typing_text)
++            self.next_btn.configure(state="disabled", text="演出中…")
++            self._run_visual_effect(event)
+         elif event["type"] == "wait":
+             self._typing_text = ""; self._typing_speaker = self.engine.speaker; self._typing_index = 0
+             self.refresh_stage("", self.engine.speaker)
+@@ -1698,6 +1903,12 @@
+                 setattr(self, child_name, None)
+         self._save_preview_label = None
+         self._save_preview_photo = None
++        if self._effect_job is not None:
++            try: self.window.after_cancel(self._effect_job)
++            except tk.TclError: pass
++            self._effect_job = None
++        self._shake_item_ids = ()
++        self._effect_photo = None
+         if self._wait_job is not None:
+             try: self.window.after_cancel(self._effect_job)
+             except tk.TclError: pass
+@@ -1749,7 +1960,7 @@
+ 
+         header = ttk.Frame(self.root, padding=(16, 12)); header.pack(fill="x")
+         ttk.Label(header, text="NovelScript Engine", style="Title.TLabel").pack(side="left")
+-        ttk.Label(header, text="  v1.9 Desktop  |  Windowsネイティブ版・オフライン", style="Sub.TLabel").pack(side="left", padx=(8, 0), pady=(7, 0))
++        ttk.Label(header, text="  v1.10 Desktop  |  Windowsネイティブ版・オフライン", style="Sub.TLabel").pack(side="left", padx=(8, 0), pady=(7, 0))
