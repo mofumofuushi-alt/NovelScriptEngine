@@ -331,9 +331,6 @@
          if self._wait_job is not None:
              try: self.window.after_cancel(self._wait_job)
              except tk.TclError: pass
-@@ -1749,7 +1960,7 @@
- 
-         header = ttk.Frame(self.root, padding=(16, 12)); header.pack(fill="x")
-         ttk.Label(header, text="NovelScript Engine", style="Title.TLabel").pack(side="left")
+@@ -1752,1 +1963,1 @@
 -        ttk.Label(header, text="  v1.9 Desktop  |  Windowsネイティブ版・オフライン", style="Sub.TLabel").pack(side="left", padx=(8, 0), pady=(7, 0))
 +        ttk.Label(header, text="  v1.10 Desktop  |  Windowsネイティブ版・オフライン", style="Sub.TLabel").pack(side="left", padx=(8, 0), pady=(7, 0))
