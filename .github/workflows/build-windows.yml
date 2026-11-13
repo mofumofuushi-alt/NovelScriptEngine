@@ -38,6 +38,7 @@ jobs:
           }
           "SOURCE_DIR=$source" >> $env:GITHUB_ENV
 
+      # Only the runtime and GUI smoke-test portions of the v1.9 delta are applied here.
       - name: Apply versioned source changes
         shell: pwsh
         run: |
