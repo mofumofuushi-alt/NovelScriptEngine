@@ -6,6 +6,9 @@ on:
     paths:
       - "NovelScriptEngine-Source-Optimized.zip"
       - "NovelScriptEngine-v1.9.patch"
+      - "NovelScriptEngine-v1.10-app.patch"
+      - "NovelScriptEngine-v1.10-test-and-samples.patch"
+      - "NovelScriptEngine-v1.10-docs.patch"
       - ".github/workflows/build-windows.yml"
 
 permissions:
@@ -49,6 +52,49 @@ jobs:
           Push-Location $env:SOURCE_DIR
           try {
             git apply --include=app.py --include=tests/gui_smoke.py --ignore-whitespace --ignore-space-change --recount $patch
+          } finally {
+            Pop-Location
+          }
+
+      - name: Normalize source line endings for patch application
+        shell: pwsh
+        run: |
+          $normalize = @'
+          from pathlib import Path
+          names = [
+              "app.py", "tests/test_desktop.py", "tests/gui_smoke.py",
+              "README.md", "CHANGELOG.md", "BUILD_NOTES.md", "TEST_REPORT.md",
+              "examples/sample_5min.nse",
+          ]
+          for name in names:
+              path = Path(name)
+              if path.exists():
+                  data = path.read_bytes().replace(b"\\r\\n", b"\\n").replace(b"\\r", b"\\n")
+                  path.write_bytes(data)
+          '@
+          Push-Location $env:SOURCE_DIR
+          try {
+            $normalize | python -
+          } finally {
+            Pop-Location
+          }
+
+      - name: Apply v1.10 visual effect changes
+        shell: pwsh
+        run: |
+          $patches = @(
+            "NovelScriptEngine-v1.10-app.patch",
+            "NovelScriptEngine-v1.10-test-and-samples.patch",
+            "NovelScriptEngine-v1.10-docs.patch"
+          )
+          Push-Location $env:SOURCE_DIR
+          try {
+            foreach ($name in $patches) {
+              $patch = Join-Path $env:GITHUB_WORKSPACE $name
+              if (!(Test-Path $patch)) { throw "Patch file not found: $name" }
+              git apply --ignore-whitespace --ignore-space-change --recount $patch
+              if ($LASTEXITCODE -ne 0) { throw "Failed to apply $name" }
+            }
           } finally {
             Pop-Location
           }
@@ -101,12 +147,12 @@ jobs:
           }
           Copy-Item "$env:SOURCE_DIR/README.md" "$dist/README_日本語.md"
           Copy-Item "$env:SOURCE_DIR/ASSET_CREDITS.md" "$dist/ASSET_CREDITS.md"
-          Compress-Archive -Path "$env:SOURCE_DIR/*" -DestinationPath (Join-Path $dist "NovelScriptEngine-v1.9-Source.zip") -Force
+          Compress-Archive -Path "$env:SOURCE_DIR/*" -DestinationPath (Join-Path $dist "NovelScriptEngine-v1.10-Source.zip") -Force
 
       - name: Publish downloadable Windows package
         uses: actions/upload-artifact@v7.0.2
         with:
-          name: NovelScriptEngine-Windows-x64-v1.9
+          name: NovelScriptEngine-Windows-x64-v1.10
           path: dist/
           if-no-files-found: error
           retention-days: 30
