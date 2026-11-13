@@ -53,6 +53,16 @@ jobs:
             Pop-Location
           }
 
+      - name: Run native GUI smoke test
+        shell: pwsh
+        run: |
+          Push-Location $env:SOURCE_DIR
+          try {
+            python tests/gui_smoke.py
+          } finally {
+            Pop-Location
+          }
+
       - name: Compile standalone Windows application
         shell: pwsh
         run: |
