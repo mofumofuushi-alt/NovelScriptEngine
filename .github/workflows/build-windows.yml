@@ -47,7 +47,7 @@ jobs:
           }
           Push-Location $env:SOURCE_DIR
           try {
-            git apply --ignore-whitespace --ignore-space-change --recount $patch
+            git apply --include=app.py --include=tests/gui_smoke.py --ignore-whitespace --ignore-space-change --recount $patch
           } finally {
             Pop-Location
           }
