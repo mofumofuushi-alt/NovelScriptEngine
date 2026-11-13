@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "NovelScriptEngine-Source-Optimized.zip"
+      - "NovelScriptEngine-v1.9.patch"
 
 permissions:
   contents: read
@@ -35,6 +36,20 @@ jobs:
             throw "ZIP内に app.py が見つかりません。配布したソースZIPを確認してください。"
           }
           "SOURCE_DIR=$source" >> $env:GITHUB_ENV
+
+      - name: Apply versioned source changes
+        shell: pwsh
+        run: |
+          $patch = Join-Path $env:GITHUB_WORKSPACE "NovelScriptEngine-v1.9.patch"
+          if (!(Test-Path $patch)) {
+            throw "NovelScriptEngine-v1.9.patch がありません。"
+          }
+          Push-Location $env:SOURCE_DIR
+          try {
+            git apply $patch
+          } finally {
+            Pop-Location
+          }
 
       - name: Install build dependency
         shell: pwsh
@@ -84,11 +99,12 @@ jobs:
           }
           Copy-Item "$env:SOURCE_DIR/README.md" "$dist/README_日本語.md"
           Copy-Item "$env:SOURCE_DIR/ASSET_CREDITS.md" "$dist/ASSET_CREDITS.md"
+          Compress-Archive -Path "$env:SOURCE_DIR/*" -DestinationPath (Join-Path $dist "NovelScriptEngine-v1.9-Source.zip") -Force
 
-      - name: Publish downloadable EXE package
+      - name: Publish downloadable Windows package
         uses: actions/upload-artifact@v7.0.2
         with:
-          name: NovelScriptEngine-Windows-x64
+          name: NovelScriptEngine-Windows-x64-v1.9
           path: dist/
           if-no-files-found: error
           retention-days: 30
